@@ -745,15 +745,17 @@ function renderSum(pg){
   s+='</div>';
   s+=`<div style="background:${ys.bal>=0?'var(--bll)':'var(--rl)'};border-radius:10px;padding:14px;text-align:center;margin-bottom:14px;border:1px solid var(--bd)"><div style="font-size:12px;color:var(--txl)">${SUM_YR}年 年間収支</div><div style="font-size:22px;font-weight:800;color:${ys.bal>=0?'var(--b)':'var(--r)'}">${fmt(ys.bal)}円</div></div>`;
 
-  s+='<div style="overflow-x:auto;border-radius:10px;border:1px solid var(--bd)"><table style="width:100%;border-collapse:collapse;font-size:12px;background:var(--cd)">';
-  s+='<thead><tr style="background:var(--b);color:#fff"><th style="padding:6px">月</th><th>収入</th><th>支出</th><th>収支</th></tr></thead><tbody>';
+  s+='<div style="border-radius:10px;border:1px solid var(--bd);overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:13px;background:var(--cd);table-layout:fixed">';
+  s+='<colgroup><col style="width:14%"><col style="width:29%"><col style="width:29%"><col style="width:28%"></colgroup>';
+  s+='<thead><tr style="background:var(--b);color:#fff"><th style="padding:8px 4px;text-align:center">月</th><th style="padding:8px 4px;text-align:right;padding-right:10px">収入</th><th style="padding:8px 4px;text-align:right;padding-right:10px">支出</th><th style="padding:8px 4px;text-align:right;padding-right:10px">収支</th></tr></thead><tbody>';
   rows.forEach(r=>{
-    s+=`<tr style="border-top:1px solid #f3f4f6"><td style="padding:5px;font-weight:600">${r.mo}月</td>`;
-    s+=`<td style="text-align:right;color:${r.inc>0?'var(--g)':'var(--txl)'}">${r.inc>0?fmt(r.inc):'-'}</td>`;
-    s+=`<td style="text-align:right">${r.active&&r.exp>0?fmt(r.exp):'-'}</td>`;
-    s+=`<td style="text-align:right;font-weight:600;color:${!r.active?'var(--txl)':r.bal<0?'var(--r)':'var(--b)'}">${r.active?fmt(r.bal):'-'}</td></tr>`;
+    s+=`<tr style="border-top:1px solid #f3f4f6">`;
+    s+=`<td style="padding:7px 4px;font-weight:600;text-align:center">${r.mo}月</td>`;
+    s+=`<td style="padding:7px 10px 7px 4px;text-align:right;color:${r.inc>0?'var(--g)':'var(--txl)'}">${r.inc>0?fmt(r.inc):'-'}</td>`;
+    s+=`<td style="padding:7px 10px 7px 4px;text-align:right">${r.active&&r.exp>0?fmt(r.exp):'-'}</td>`;
+    s+=`<td style="padding:7px 10px 7px 4px;text-align:right;font-weight:600;color:${!r.active?'var(--txl)':r.bal<0?'var(--r)':'var(--b)'}">${r.active?fmt(r.bal):'-'}</td></tr>`;
   });
-  s+=`<tr style="background:var(--bg);font-weight:700"><td style="padding:6px">年計</td><td style="text-align:right;color:var(--g)">${fmt(ys.inc)}</td><td style="text-align:right">${fmt(ys.exp)}</td><td style="text-align:right;color:${ys.bal<0?'var(--r)':'var(--b)'}">${fmt(ys.bal)}</td></tr>`;
+  s+=`<tr style="background:var(--bg);font-weight:700"><td style="padding:7px 4px;text-align:center">年計</td><td style="padding:7px 10px 7px 4px;text-align:right;color:var(--g)">${fmt(ys.inc)}</td><td style="padding:7px 10px 7px 4px;text-align:right">${fmt(ys.exp)}</td><td style="padding:7px 10px 7px 4px;text-align:right;color:${ys.bal<0?'var(--r)':'var(--b)'}">${fmt(ys.bal)}</td></tr>`;
   s+='</tbody></table></div>';
 
   const mx=Math.max(...rows.filter(r=>r.active).map(r=>Math.max(r.inc,r.exp)),1);

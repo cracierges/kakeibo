@@ -282,7 +282,7 @@ function getMonthScore(yr,mo){
 }
 function getScoreExpr(s){return s>=80?'happy':s>=50?'excited':s>=30?'think':'present'}
 
-let D,TAB=0,YR,MO,FX_OPEN=true,SEL_TAG={inc:null,exp:null},EDIT_TAGS=null,SEL_REGION=2;
+let D,TAB=0,YR,MO,FX_OPEN=true,SEL_TAG={inc:null,exp:null},EDIT_TAGS=null,SEL_REGION=2,EDIT_ENTRY=null;
 
 function mk(){
   return{
@@ -346,9 +346,12 @@ function renderCal(pg){
   const dim=new Date(YR,MO+1,0).getDate(),fdow=new Date(YR,MO,1).getDay();
   const now=new Date(),tdk=dk(now.getFullYear(),now.getMonth(),now.getDate());
   const isEnd=now.getDate()>=28&&now.getFullYear()===YR&&now.getMonth()===MO;
-  let mI=0,mE=0;
-  for(let d=1;d<=dim;d++){(D.entries[dk(YR,MO,d)]||[]).forEach(e=>{if(e.t==='inc')mI+=+e.a||0;else mE+=+e.a||0})}
-  const ft=fxTotal(),uk=`${YR}-${MO}`,ut=D.util[uk]||{},utT=(+ut.eC||0)+(+ut.gC||0)+(+ut.wC||0),tE=mE+ft+utT,bal=mI-tE;
+  let mI=0,mE=0,mHasEntry=false;
+  for(let d=1;d<=dim;d++){const ents=D.entries[dk(YR,MO,d)]||[];if(ents.length)mHasEntry=true;ents.forEach(e=>{if(e.t==='inc')mI+=+e.a||0;else mE+=+e.a||0})}
+  const uk=`${YR}-${MO}`,ut=D.util[uk]||{},utT=(+ut.eC||0)+(+ut.gC||0)+(+ut.wC||0);
+  const mActive=mHasEntry||utT>0||mI>0;
+  const ft=mActive?fxTotal():0;
+  const tE=mE+ft+utT,bal=mI-tE;
   const gr=getGreeting();
   const sc=isEnd?getMonthScore(YR,MO):null;
   const cardImg=sc?CHAR[getScoreExpr(sc.score)]:CHAR[gr.pose];
@@ -395,7 +398,23 @@ function renderMdlHTML(yr,mo,d){
   s+=`<div class="mh"><h2>${mo+1}/${d}（${dow}）</h2><button onclick="closeMdl()">✕</button></div>`;
   if(ents.length){
     ents.forEach((e,i)=>{
-      s+=`<div class="ei"><div class="en">${e.n}</div><div class="ea${e.t==='inc'?' inc':''}">${e.t==='inc'?'+':'−'}${fmt(e.a)}</div><button class="ed" onclick="delE('${key}',${i})">✕</button></div>`;
+      if(EDIT_ENTRY&&EDIT_ENTRY.key===key&&EDIT_ENTRY.idx===i){
+        // Edit mode for this entry
+        s+=`<div class="ei" style="flex-wrap:wrap;gap:4px;padding:8px 0">`;
+        s+=`<div class="en" style="font-size:11px;color:var(--txl);width:100%;margin-bottom:2px">${e.n}を編集</div>`;
+        s+=`<select id="editType_${i}" style="padding:6px;border:1px solid var(--bd);border-radius:6px;font-size:13px;flex-shrink:0">`;
+        s+=`<option value="exp"${e.t==='exp'?' selected':''}>支出</option>`;
+        s+=`<option value="inc"${e.t==='inc'?' selected':''}>収入</option>`;
+        s+=`</select>`;
+        s+=`<input id="editAmt_${i}" type="number" inputmode="numeric" value="${e.a}" style="flex:1;padding:6px;border:1px solid var(--bd);border-radius:6px;font-size:14px;text-align:right;outline:none;min-width:60px">`;
+        s+=`<button style="padding:6px 12px;background:var(--b);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer" onclick="saveEditE('${key}',${i})">保存</button>`;
+        s+=`<button style="padding:6px 10px;background:none;border:1px solid var(--bd);border-radius:6px;font-size:12px;cursor:pointer" onclick="EDIT_ENTRY=null;document.getElementById('mr').innerHTML=renderMdlHTML(YR,MO,${parseInt(key.split('-')[2])})">取消</button>`;
+        s+=`</div>`;
+      }else{
+        s+=`<div class="ei"><div class="en">${e.n}</div><div class="ea${e.t==='inc'?' inc':''}">${e.t==='inc'?'+':'−'}${fmt(e.a)}</div>`;
+        s+=`<button style="background:none;border:none;color:var(--b);font-size:11px;padding:4px 6px;cursor:pointer;border-radius:4px;border:1px solid var(--b)" onclick="startEditE('${key}',${i})">編集</button>`;
+        s+=`<button class="ed" onclick="delE('${key}',${i})">✕</button></div>`;
+      }
     });
   }else{
     s+='<div style="text-align:center;padding:16px 0;color:var(--txl);font-size:13px">まだ記録がありません</div>';
@@ -439,7 +458,20 @@ function doAdd(key){
   const d=parseInt(key.split('-')[2]);
   document.getElementById('mr').innerHTML=renderMdlHTML(YR,MO,d);
 }
-function delE(key,i){D.entries[key].splice(i,1);if(!D.entries[key].length)delete D.entries[key];sv();const d=parseInt(key.split('-')[2]);document.getElementById('mr').innerHTML=renderMdlHTML(YR,MO,d)}
+function delE(key,i){D.entries[key].splice(i,1);if(!D.entries[key].length)delete D.entries[key];sv();const d=parseInt(key.split('-')[2]);EDIT_ENTRY=null;document.getElementById('mr').innerHTML=renderMdlHTML(YR,MO,d)}
+function startEditE(key,i){EDIT_ENTRY={key,idx:i};SEL_TAG={inc:null,exp:null};const d=parseInt(key.split('-')[2]);document.getElementById('mr').innerHTML=renderMdlHTML(YR,MO,d)}
+function saveEditE(key,i){
+  const typeEl=document.getElementById('editType_'+i);
+  const amtEl=document.getElementById('editAmt_'+i);
+  if(!typeEl||!amtEl)return;
+  const newAmt=+amtEl.value;
+  if(!newAmt){alert('金額を入力してください');return}
+  D.entries[key][i].t=typeEl.value;
+  D.entries[key][i].a=newAmt;
+  sv();EDIT_ENTRY=null;
+  const d=parseInt(key.split('-')[2]);
+  document.getElementById('mr').innerHTML=renderMdlHTML(YR,MO,d);
+}
 
 // ========== FIXED ==========
 function renderFixed(pg){
@@ -687,13 +719,22 @@ function delSavAcc(i){
 function renderSum(pg){
   const rows=[];
   for(let mo=0;mo<12;mo++){
-    const dim=new Date(YR,mo+1,0).getDate();let inc=0,exp=0;
-    for(let d=1;d<=dim;d++){(D.entries[dk(YR,mo,d)]||[]).forEach(e=>{if(e.t==='inc')inc+=+e.a||0;else exp+=+e.a||0})}
-    const uk=`${YR}-${mo}`,ut=D.util[uk]||{},utT=(+ut.eC||0)+(+ut.gC||0)+(+ut.wC||0);
-    const tE=exp+fxTotal()+utT;
-    rows.push({mo:mo+1,inc,exp:tE,bal:inc-tE});
+    const dim=new Date(YR,mo+1,0).getDate();let inc=0,varExp=0,hasEntry=false;
+    for(let d=1;d<=dim;d++){
+      const ents=D.entries[dk(YR,mo,d)]||[];
+      if(ents.length)hasEntry=true;
+      ents.forEach(e=>{if(e.t==='inc')inc+=+e.a||0;else varExp+=+e.a||0});
+    }
+    const uk=`${YR}-${mo}`,ut=D.util[uk]||{};
+    const utT=(+ut.eC||0)+(+ut.gC||0)+(+ut.wC||0);
+    const hasUtil=utT>0;
+    // Only apply fixed costs to months that have any recorded activity
+    const active=hasEntry||hasUtil||inc>0;
+    const fx=active?fxTotal():0;
+    const tE=varExp+fx+utT;
+    rows.push({mo:mo+1,inc,exp:tE,bal:inc-tE,active});
   }
-  const ys=rows.reduce((a,r)=>({inc:a.inc+r.inc,exp:a.exp+r.exp,bal:a.bal+r.bal}),{inc:0,exp:0,bal:0});
+  const ys=rows.filter(r=>r.active).reduce((a,r)=>({inc:a.inc+r.inc,exp:a.exp+r.exp,bal:a.bal+r.bal}),{inc:0,exp:0,bal:0});
 
   let s=`<div style="font-size:15px;font-weight:700;margin-bottom:12px">${YR}年 まとめ</div>`;
   s+=`<div style="background:${ys.bal>=0?'var(--bll)':'var(--rl)'};border-radius:10px;padding:14px;text-align:center;margin-bottom:14px;border:1px solid var(--bd)"><div style="font-size:12px;color:var(--txl)">年間収支</div><div style="font-size:22px;font-weight:800;color:${ys.bal>=0?'var(--b)':'var(--r)'}">${fmt(ys.bal)}円</div></div>`;
@@ -702,14 +743,14 @@ function renderSum(pg){
   s+='<thead><tr style="background:var(--b);color:#fff"><th style="padding:6px">月</th><th>収入</th><th>支出</th><th>収支</th></tr></thead><tbody>';
   rows.forEach(r=>{
     s+=`<tr style="border-top:1px solid #f3f4f6"><td style="padding:5px;font-weight:600">${r.mo}月</td>`;
-    s+=`<td style="text-align:right;color:var(--g)">${r.inc?fmt(r.inc):'-'}</td>`;
-    s+=`<td style="text-align:right">${r.exp?fmt(r.exp):'-'}</td>`;
-    s+=`<td style="text-align:right;font-weight:600;color:${r.bal<0?'var(--r)':'var(--b)'}">${r.inc||r.exp?fmt(r.bal):'-'}</td></tr>`;
+    s+=`<td style="text-align:right;color:${r.inc>0?'var(--g)':'var(--txl)'}">${r.inc>0?fmt(r.inc):'-'}</td>`;
+    s+=`<td style="text-align:right">${r.active&&r.exp>0?fmt(r.exp):'-'}</td>`;
+    s+=`<td style="text-align:right;font-weight:600;color:${!r.active?'var(--txl)':r.bal<0?'var(--r)':'var(--b)'}">${r.active?fmt(r.bal):'-'}</td></tr>`;
   });
   s+=`<tr style="background:var(--bg);font-weight:700"><td style="padding:6px">年計</td><td style="text-align:right;color:var(--g)">${fmt(ys.inc)}</td><td style="text-align:right">${fmt(ys.exp)}</td><td style="text-align:right;color:${ys.bal<0?'var(--r)':'var(--b)'}">${fmt(ys.bal)}</td></tr>`;
   s+='</tbody></table></div>';
 
-  const mx=Math.max(...rows.map(r=>Math.max(r.inc,r.exp)),1);
+  const mx=Math.max(...rows.filter(r=>r.active).map(r=>Math.max(r.inc,r.exp)),1);
   s+='<div style="margin-top:14px"><div style="display:flex;gap:8px;font-size:10px;color:var(--txl);margin-bottom:4px">';
   s+='<span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:var(--g);border-radius:2px"></span>収入</span>';
   s+='<span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:var(--o);border-radius:2px"></span>支出</span></div>';
@@ -726,13 +767,13 @@ function renderSum(pg){
 // ===== TUTORIAL =====
 const TUT_KEY='ck6_tut_done';
 const TUT=[
-  {pose:'excited',tab:null,title:'はじめまして',msg:'クラシェルジュ家計簿へようこそ。\n私は、あなたの家計をサポートするコンシェルジュ、倉橋アンナと申します。\n\nまずは使い方を一緒に見ていきましょう。'},
-  {pose:'present',tab:0,title:'STEP 1：カレンダー',msg:'ここで毎日の収入・支出を記録します。\n\n日付をタップすると、その日の入力画面が開きます。レシートを見ながら、月末にまとめて入力していただいてもOKです。'},
-  {pose:'present',tab:1,title:'STEP 2：固定費',msg:'家賃・スマホ・ネット代など、毎月決まった金額がかかる項目はここに登録してください。\n\n一度入力すれば毎月自動で反映されるので、入力の手間が省けます。'},
-  {pose:'caution',tab:2,title:'STEP 3：光熱費',msg:'電気・ガス・水道の金額を入力すると、世帯人数や地域から計算した平均と比較できます。\n\n平均より高い月は赤くお知らせします。\n料金が高すぎてお困りの場合は、いつでもお話を聞きますので、下部の「LINE無料相談」からお気軽にどうぞ。'},
-  {pose:'present',tab:3,title:'STEP 4：貯蓄残高',msg:'月末の口座残高を入力すると、資産の推移が一目でわかります。\n\n口座名は自由に編集・追加・削除できます。'},
-  {pose:'think',tab:4,title:'STEP 5：まとめ',msg:'1年分のデータがグラフと表で見られます。\n\n「今月使いすぎたかな」「貯金できているかな」を振り返るのにお使いください。'},
-  {pose:'happy',tab:0,title:'準備OK',msg:'お疲れさまでした。\n\n家計管理はコツコツ続けることが大切です。\n無理せず、楽しみながら続けていきましょう。\n\n一緒に頑張りましょうね。'}
+  {pose:'excited',tab:null,title:'はじめまして',msg:'クラシェルジュ家計簿へようこそ。\n私は、あなたの家計をサポートするコンシェルジュ、倉橋アンナと申します。\n\n<strong style="color:var(--r)">ご利用前の大切なお願いです。</strong>\nこのページをブックマーク、または「ホーム画面に追加」してご利用ください。同じ場所から開くことで、入力したデータがそのまま次回に引き継がれます。'},
+  {pose:'present',tab:0,title:'STEP 1：カレンダー',msg:'ここで毎日の収入・支出を記録します。\n\n日付をタップするとその日の入力画面が開きます。<strong>毎日少しずつ入力するのが一番おすすめです。</strong>\n週1回レシートをまとめて見ながら入力していただいてもOKです。'},
+  {pose:'present',tab:1,title:'STEP 2：固定費',msg:'家賃・スマホ・ネット代など、<strong>毎月決まった金額の項目はここに登録してください。</strong>\n\n一度入力すれば毎月自動で反映されるので、入力の手間が省けます。\nまた、収入の記録がある月にのみ反映されます。'},
+  {pose:'caution',tab:2,title:'STEP 3：光熱費',msg:'電気・ガス・水道の金額を入力すると、世帯人数や地域から計算した<strong>平均と比較</strong>できます。\n\n<strong style="color:var(--r)">平均より高い月は赤くお知らせします。</strong>\n料金が高すぎてお困りの場合は、いつでもお話を聞きますので、下部の「LINE無料相談」からお気軽にどうぞ。'},
+  {pose:'present',tab:3,title:'STEP 4：貯蓄残高',msg:'月末の口座残高を入力すると、<strong>資産の推移が一目でわかります。</strong>\n\n口座名は自由に編集・追加・削除できます。\n複数の口座をまとめて管理しましょう。'},
+  {pose:'think',tab:4,title:'STEP 5：まとめ',msg:'1年分のデータがグラフと表で一覧できます。\n\n<strong>「今月使いすぎたかな」「ちゃんと貯金できているかな」</strong>を振り返るのにお使いください。'},
+  {pose:'happy',tab:0,title:'準備OK',msg:'お疲れさまでした。\n\n<strong>家計管理はコツコツ続けることが大切です。</strong>\n無理せず、楽しみながら続けていきましょう。\n\n一緒に頑張りましょうね。'}
 ];
 let TUT_STEP=0;
 

@@ -270,7 +270,9 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 </div></div>
 <div id="mr"></div>
 
-<script>
+<script>var SEL_CHAR='anna';
+var SEL_REGION=2;
+
 const K='ck6';
 const TABS=['カレンダー','光熱費','貯金額','まとめ'];
 const MS=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
@@ -568,7 +570,7 @@ function getMonthScore(yr,mo){
 }
 function getScoreExpr(s){return s>=80?'happy':s>=50?'excited':s>=30?'think':'present'}
 
-let D,TAB=0,YR,MO,SUM_YR,FX_OPEN=true,UTIL_VIEW='elecC',FX_DEL_CONFIRM=null,SAV_DEL_CONFIRM=null,SEL_TAG={inc:null,exp:null},EDIT_TAGS=null,SEL_REGION=2,EDIT_ENTRY=null;
+var D,TAB=0,YR,MO,SUM_YR,FX_OPEN=true,UTIL_VIEW='elecC',FX_DEL_CONFIRM=null,SAV_DEL_CONFIRM=null,SEL_TAG={inc:null,exp:null},EDIT_TAGS=null,SEL_REGION=2,EDIT_ENTRY=null;
 var PIE_VIEW='exp',SUM_VIEW='exp',SUM_SORT='default',CUR_DAY=null,CALC_MODE=false,CALC_VAL='',ENTRY_TYPE='exp',ENTRY_CAT=null,ENTRY_MEMO='';
 
 function mk(){
@@ -694,7 +696,7 @@ function buildPieChart(pd,large){
 function showPieModal(){
   const pieData=buildPieData(YR,MO,fxTotal(),(function(){const uk=YR+'-'+MO;const ut=D.util[uk]||{};return(+ut.eC||0)+(+ut.gC||0)+(+ut.wC||0);})(),PIE_VIEW==='inc');
   if(!pieData||pieData.total===0)return;
-  let s='<div class="mbg" onclick="closeModal2()" style="align-items:center">';
+  var s='<div class="mbg" onclick="closeModal2()" style="align-items:center">';
   s+='<div style="background:var(--bg);border-radius:16px;width:calc(100% - 32px);max-width:480px;padding:20px 16px;max-height:90vh;overflow-y:auto">';
   s+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
   s+='<div style="font-size:15px;font-weight:700">'+(PIE_VIEW==='inc'?'収入':'支出')+'の内訳（'+MS[MO]+'）</div>';
@@ -786,7 +788,7 @@ function saveEditE(key,i){
 // ========== FIXED ==========
 function renderFixed(pg){
   FX_DEL_CONFIRM=null;
-  let s='<div style="font-size:15px;font-weight:700;margin-bottom:4px">固定費の管理</div>';
+  var s='<div style="font-size:15px;font-weight:700;margin-bottom:4px">固定費の管理</div>';
   s+='<div style="font-size:12px;color:var(--txl);margin-bottom:10px">毎月の支出に自動加算されます</div>';
   s+='<div class="fxsec" id="fxBox"><div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="closeModal2()" style="background:none;border:1px solid var(--bd);border-radius:8px;padding:5px 14px;font-size:13px;color:var(--txl);cursor:pointer">✕ 閉じる</button></div><div class="fxhd" onclick="_fxToggle()"><div class="ft">毎月の固定費</div><div class="fa">'+fmt(fxTotal())+'円/月</div><div class="fc'+(FX_OPEN?' open':'')+'">▼</div></div>';
   if(FX_OPEN){
@@ -847,7 +849,7 @@ function _fxDel(btn,i){
 
 function incomeTotal(){return(D.income||[]).reduce((a,f)=>a+(+f.a||0),0);}
 function renderIncome(pg){
-  let s='<div style="font-size:15px;font-weight:700;margin-bottom:4px">固定収入の管理</div>';
+  var s='<div style="font-size:15px;font-weight:700;margin-bottom:4px">固定収入の管理</div>';
   s+='<div style="font-size:12px;color:var(--txl);margin-bottom:10px">定期的な収入を自動でカレンダーに反映します</div>';
   window._incPg=pg;
   if(!D.income)D.income=[];
@@ -870,7 +872,7 @@ function renderIncome(pg){
 function _incEdit(i){
   const pg=window._incPg||document.getElementById('pgInner')||document.getElementById('pg');
   const inc=D.income[i];if(!inc)return;
-  let s='<div style="font-size:15px;font-weight:700;margin-bottom:10px">収入の編集</div>';
+  var s='<div style="font-size:15px;font-weight:700;margin-bottom:10px">収入の編集</div>';
   s+='<button onclick="renderIncome(window._incPg)" style="margin-bottom:10px;padding:6px 14px;background:none;border:1px solid var(--bd);border-radius:8px;font-size:13px;color:var(--txl);cursor:pointer">← 戻る</button>';
   s+='<div style="background:var(--cd);border-radius:10px;border:1px solid var(--bd);padding:12px">';
   s+='<div class="sq"><label>項目名</label><input id="incEditCat" type="text" value="'+inc.cat.replace(/"/g,'&quot;')+'" style="width:100%;padding:8px;border:1px solid var(--bd);border-radius:6px;font-size:14px;outline:none"></div>';
@@ -930,7 +932,7 @@ function _incDel(i){
 function _addIncCat(){const el=document.getElementById('newIncCat');if(el&&el.value.trim()){D.cats.inc.push(el.value.trim());sv();_incCatEdit();}}
 function _incCatEdit(){
   const pg=window._incPg||document.getElementById('pgInner')||document.getElementById('pg');
-  let s='<div style="font-size:15px;font-weight:700;margin-bottom:10px">収入カテゴリーの編集</div>';
+  var s='<div style="font-size:15px;font-weight:700;margin-bottom:10px">収入カテゴリーの編集</div>';
   s+='<button onclick="renderIncome(window._incPg||document.getElementById(\'pg\'))" style="margin-bottom:10px;padding:8px 16px;background:none;border:1px solid var(--bd);border-radius:8px;font-size:13px;color:var(--txl);cursor:pointer">← 入力に戻る</button>';
   (D.cats.inc||[]).forEach((c,i)=>{
     s+='<div style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd);gap:8px">';
@@ -993,7 +995,7 @@ const TUT=[
   {pose:'think',tab:3,title:'まとめ',msg:'1年分のデータがグラフと表で一覧できます。\n\n<strong>「今月使いすぎたかな」「ちゃんと貯金できているかな」</strong>を振り返るのにお使いください。\n\n気になる項目はタップすると内訳グラフが拡大表示されますので要チェックです。'},
   {pose:'happy',tab:0,title:'準備OK！',msg:'お疲れさまでした。\n<strong>家計管理はコツコツ続けることが大切です。</strong>\n無理せず、楽しみながら続けていきましょう。\n一緒に頑張りましょうね。\n\nこの後、固定費と収入の初期設定をご案内します。'}
 ];
-let TUT_STEP=0;
+var TUT_STEP=0;
 var ENTRY_TYPE="exp";
 var ENTRY_CAT=null;
 var ENTRY_MEMO="";

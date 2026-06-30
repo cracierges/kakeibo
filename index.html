@@ -327,14 +327,14 @@ function adaptTone(msg){msg=msg.replace(/\n/g,'%%NL%%');
   msg=msg.replace(/ご利用ください/g,'使ってね').replace(/お使いください/g,'使ってね').replace(/お気軽にどうぞ/g,'気軽に相談してね');
   msg=msg.replace(/ございます/g,'');
   msg=msg.replace(/要チェックです。/g,'要チェック！').replace(/要チェックです/g,'要チェック');
-  if(ch==='anna')return msg;
+  if(ch==='anna')return msg.replace(/%%NL%%/g,'\n');
   // Tone endings per character
   const E={
     gasukichi:{end:'ぜ！',endHard:'ぞ！',na:'だぜ！',q:'か？',ne:'てくれ！',let:'ぜ！',tsukare:'お疲れ！',please:'くれ！'},
     denkichi:{end:'よ！',endHard:'よ！',na:'だよ！',q:'？',ne:'てね！',let:'よう！',tsukare:'お疲れさま！',please:'ね！'},
     senkichi:{end:'よ！',endHard:'んだよ！',na:'だよ！',q:'の？',ne:'てね！',let:'よう！',tsukare:'お疲れさま！',please:'ね！'}
   }[ch];
-  if(!E)return msg;
+  if(!E)return msg.replace(/%%NL%%/g,'\n');
   let r=msg;
 
   // 0. Critical phrase fixes
@@ -1158,7 +1158,7 @@ function getWelcomeMsg(){
     gasukichi:'よう！クラシェルジュ家計簿へようこそ！\n俺はガス吉だぜ！家計管理は俺に任せろ！\n\n<strong style="color:var(--r)">ご利用前の大切なお願いだぞ！</strong>\nこのページをブックマーク、または「ホーム画面に追加」しといてくれ！\n同じ場所から開けば、データがちゃんと残るぞ！',
     denkichi:'クラシェルジュ家計簿へようこそ！\n僕は、あなたの家計をサポートするコンシェルジュ、でん吉です。\n\n<strong style="color:var(--r)">ご利用前の大切なお願いだよ！</strong>\nこのページをブックマーク、または「ホーム画面に追加」してね！\n同じ場所から開けば、データがちゃんと残るよ！'
   };
-  return (msgs[ch]||msgs.anna).replace(/\n/g,'<br>');
+  return (msgs[ch]||msgs.anna).replace(/%%NL%%/g,'\n').replace(/\n/g,'<br>');
 }
 function renderTutorial(){
   var t=TUT[TUT_STEP];
@@ -1168,7 +1168,7 @@ function renderTutorial(){
   var posTop=t.pos==='top';
   var s='<div class="tut-bg" id="tutBg" style="'+(posTop?'align-items:flex-start;padding-top:10px;':'')+'">';
   s+='<div class="tut">';
-  s+='<div class="tut-head"><img src="'+CHAR[t.pose]+'"><div class="tut-bubble"><div class="tn">'+getCharName()+'</div><div class="tm">'+(t.msgFn?getWelcomeMsg():adaptTone(t.msg.replace(/アンナ/g,getCharName()))).replace(/\n/g,'<br>')+'</div></div></div>';
+  s+='<div class="tut-head"><img src="'+CHAR[t.pose]+'"><div class="tut-bubble"><div class="tn">'+getCharName()+'</div><div class="tm">'+(t.msgFn?getWelcomeMsg():adaptTone(t.msg.replace(/アンナ/g,getCharName()))).replace(/%%NL%%/g,'\n').replace(/\n/g,'<br>')+'</div></div></div>';
   s+='<div class="tut-actions">';
   if(TUT_STEP>0)s+='<button type="button" class="tut-skip" data-tut="back">← もどる</button>';
   if(!isLast)s+='<button type="button" class="tut-skip" data-tut="skip">スキップ</button>';
